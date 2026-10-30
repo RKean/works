@@ -217,7 +217,7 @@ function softTex() { const [c, x] = cv(64, 64); const g = x.createRadialGradient
 function rng(seed) { return () => ((seed = (seed * 16807) % 2147483647) / 2147483647); }
 // island height (world x/z): flat meadow inside r 20, rolling hills to r 30, a drop at the rim
 const RAD = 36;
-function hgt(x, z) { const r = Math.hypot(x, z), y = -z; const edge = THREE.MathUtils.smoothstep(r, 20, 30);
+function hgt(x, z) { const r = Math.hypot(x, z), y = -z; const edge = THREE.MathUtils.smoothstep(r, 25, 31);
   const hill = (Math.sin(x * .35) * Math.cos(y * .3) * .5 + .5) * 3.2 * edge + edge * 1.2 + (Math.sin(x * 1.3 + y * .7) * Math.cos(y * 1.1 - x * .4)) * .25 * edge;
   return hill + (r > RAD - 2 ? -(r - (RAD - 2)) * 2.2 : 0); }
 const PATHS = [[0, 2, 5.5], [0, -4, 3], [-5, -1.5, 2.6], [5, -1.5, 2.6], [5, 6, 2.4], [0, 9, 3]];

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { WORKS, PROFILE } from './data.js';
-import { createExplore, SKINS } from './explore.js?v=dusk1';
+import { createExplore, SKINS } from './explore.js?v=dusk2';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
