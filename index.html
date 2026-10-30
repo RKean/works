@@ -3,19 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>IRFAN © 26’ | Explore · Senior PHP / Laravel Developer</title>
+<title>Irfan ©26’ | Explore · Senior PHP / Laravel Developer</title>
 <meta name="description" content="Selected works of Irfan bin Zainuddin, Senior PHP / Laravel Developer in Kuala Lumpur: government e-procurement, BI dashboards, HRMS and more.">
-<meta name="theme-color" content="#000000">
-<meta property="og:title" content="IRFAN © 26’ | Works">
+<meta name="theme-color" content="#bfeaff">
+<meta name="color-scheme" content="light">
+<meta property="og:title" content="Irfan ©26’ | Works">
 <meta property="og:description" content="Secure, workflow-heavy web systems for government and enterprise clients.">
 <meta property="og:type" content="website">
+<meta property="og:image" content="https://rkean.github.io/works/assets/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css?v=cam1">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400..700&family=Nunito:wght@400..900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css?v=meadow1">
 <script type="importmap">{"imports":{"three":"./assets/vendor/three.module.min.js","three/addons/":"./assets/vendor/addons/"}}</script>
-<script type="module" src="assets/app.js?v=cam1"></script>
+<script type="module" src="assets/app.js?v=meadow1"></script>
 </head>
 <body class="is-loading" data-view="explore">
 
@@ -23,42 +26,41 @@
   <div class="pre-mark"><span class="pre-dot"></span><span class="pre-dot"></span></div>
   <div class="pre-count bold"><span id="pre-num">000</span><sup>%</sup></div>
   <div class="pre-bar"><i id="pre-fill"></i></div>
-  <div class="pre-label mono">BOOTING EXPLORE.EXE</div>
+  <div class="pre-label mono">Packing snacks for the trip…</div>
 </div>
 
 <canvas id="gl" aria-hidden="true"></canvas>
 <div id="dim" aria-hidden="true"></div>
 <div id="fallback" aria-hidden="true"><img alt=""></div>
-<div class="grain" aria-hidden="true"></div>
 
 <header class="title-container">
-  <a href="#explore" class="logo bold">IRFAN <span>©</span> 26’</a>
-  <h2 class="jp">ソフトウェア開発者 · PEMBANGUN PERISIAN</h2>
-  <p class="role">SENIOR PHP / LARAVEL<br>DEVELOPER</p>
-  <p class="role dim">BASED IN KUALA LUMPUR</p>
+  <a href="#explore" class="logo bold">Irfan <span>©</span>26’</a>
+  <h2 class="jp">Software developer · Pembangun perisian</h2>
+  <p class="role">Senior PHP / Laravel<br>Developer</p>
+  <p class="role dim">Based in Kuala Lumpur</p>
   <div class="controls c-explore" aria-hidden="true">
     <div class="keys">
       <span class="key k-up">▲</span><span class="key k-l">◀</span><span class="key k-dn">▼</span><span class="key k-r">▶</span>
-    </div><span class="ctl-label">CONTROL</span>
-    <span class="key wide k-space">SPACE</span><span class="ctl-label">JUMP</span>
-    <span class="key wide k-e">E / ENTER</span><span class="ctl-label">INTERACT</span>
-    <span class="key wide k-cam">DRAG · WHEEL · R</span><span class="ctl-label">CAMERA ORBIT · ZOOM · RESET</span>
+    </div><span class="ctl-label">Move</span>
+    <span class="key wide k-space">SPACE</span><span class="ctl-label">Hop</span>
+    <span class="key wide k-e">E / ENTER</span><span class="ctl-label">Talk / enter</span>
+    <span class="key wide k-cam">DRAG · WHEEL · R</span><span class="ctl-label">Camera orbit · zoom · reset</span>
   </div>
   <div class="controls c-works" aria-hidden="true">
     <div class="keys">
       <span class="key k-up">▲</span><span class="key k-l">◀</span><span class="key k-dn">▼</span><span class="key k-r">▶</span>
-    </div><span class="ctl-label">BROWSE</span>
-    <span class="key wide k-enter">ENTER</span><span class="ctl-label">DETAILS</span>
+    </div><span class="ctl-label">Browse</span>
+    <span class="key wide k-enter">ENTER</span><span class="ctl-label">Details</span>
   </div>
 </header>
 
-<div class="status mono" id="status">Status: OPEN TO ROLES, Engine: —, Frame: — ms, — FPS</div>
+<div class="status mono" id="status" hidden>Open to roles</div>
 
 <nav class="pill-nav" aria-label="Main">
   <span class="pill-bg" aria-hidden="true"></span>
-  <a href="#explore" data-nav="explore">EXPLORE</a>
-  <a href="#works" data-nav="works">WORKS</a>
-  <a href="#about" data-nav="about">ABOUT</a>
+  <a href="#explore" data-nav="explore">Explore</a>
+  <a href="#works" data-nav="works">Works</a>
+  <a href="#about" data-nav="about">About</a>
 </nav>
 
 <main>
@@ -69,13 +71,13 @@
     <div class="dialog" id="dialog" aria-live="polite"><div class="dlg-name bold" id="dlg-name"></div><p id="dlg-text"></p><div class="dlg-links" id="dlg-links"></div></div>
     <div class="tutorial" id="tutorial">
       <div class="tut-steps" id="tut-steps"></div>
-      <button class="skip bold" id="tut-skip" type="button">SKIP</button>
+      <button class="skip bold" id="tut-skip" type="button">Skip</button>
     </div>
     <div class="toast bold" id="toast"></div>
     <div class="joy" id="joy" aria-hidden="true"><i></i></div>
-    <button class="jump-btn bold" id="jump-btn" type="button" aria-label="Jump">JUMP</button>
-    <button class="cam-btn bold" id="cam-btn" type="button" aria-label="Reset camera">⟲ CAM</button>
-    <div class="cam-hint mono" id="cam-hint" aria-hidden="true">2 FINGERS · ORBIT / PINCH · ZOOM</div>
+    <button class="jump-btn bold" id="jump-btn" type="button" aria-label="Jump">Jump</button>
+    <button class="cam-btn bold" id="cam-btn" type="button" aria-label="Reset camera">⟲ Cam</button>
+    <div class="cam-hint mono" id="cam-hint" aria-hidden="true">2 fingers · orbit / pinch · zoom</div>
     <noscript></noscript>
   </section>
 
@@ -86,17 +88,17 @@
       <div class="work-tag" id="w-tag">—</div>
       <h1 class="work-title bold" id="w-title">—</h1>
       <p class="work-sub mono" id="w-sub">—</p>
-      <button class="bracket" id="w-open" type="button">[ VIEW DETAILS ]</button>
+      <button class="bracket" id="w-open" type="button">View details</button>
     </div>
     <div class="caption mono" id="w-caption"></div>
-    <a class="bracket list-link" href="#index">[ INDEX VIEW ]</a>
+    <a class="bracket list-link" href="#index">Index view</a>
 
     <div id="works-bar">
       <div class="works-bottom-left">
         <button class="tri left" id="prev" aria-label="Previous work"></button>
         <button class="tri right" id="next" aria-label="Next work"></button>
-        <h2 class="bold works-instruction desk">NXT / PREV.</h2>
-        <h2 class="bold works-instruction mob">SWIPE UP / DWN.</h2>
+        <h2 class="bold works-instruction desk">Next / prev</h2>
+        <h2 class="bold works-instruction mob">Swipe up / down</h2>
       </div>
       <div class="bar-container" id="bar" role="tablist" aria-label="Works"></div>
     </div>
@@ -105,7 +107,7 @@
   <!-- INDEX -->
   <section id="index-view" class="view" aria-label="Index of works">
     <div class="index-inner">
-      <div class="big-title bold" aria-hidden="true">INDEX</div>
+      <div class="big-title bold" aria-hidden="true">Index</div>
       <p class="index-note mono">Source code for client projects is private. Screenshots come from each system’s user manuals (names, amounts and contact details blurred) or from local runs with invented demo data.</p>
       <ol class="index-list" id="index-list"></ol>
     </div>
@@ -115,7 +117,7 @@
   <!-- ABOUT -->
   <section id="about-view" class="view" aria-label="About">
     <div class="about-inner">
-      <div class="big-title bold" aria-hidden="true">IRFAN</div>
+      <div class="big-title bold" aria-hidden="true">Irfan</div>
       <div class="about-cols">
         <div class="half" id="about-text"></div>
         <div class="half">
@@ -124,11 +126,11 @@
         </div>
       </div>
       <div class="stats" id="stats"></div>
-      <h3 class="sec bold">SKILLS <span>/ 技術</span></h3>
+      <h3 class="sec bold">Skills <span>· what I use</span></h3>
       <div class="skills" id="skills"></div>
-      <h3 class="sec bold">EXPERIENCE <span>/ 経験</span></h3>
+      <h3 class="sec bold">Experience <span>· where I’ve been</span></h3>
       <ol class="exp" id="exp"></ol>
-      <footer class="foot mono"><span>© 2026 Irfan bin Zainuddin · Kuala Lumpur, Malaysia</span><a href="#explore">[ BACK TO EXPLORE ]</a></footer>
+      <footer class="foot mono"><span>© 2026 Irfan bin Zainuddin · Kuala Lumpur, Malaysia</span><a href="#explore">Back to the island</a></footer>
     </div>
   </section>
 </main>
@@ -138,7 +140,7 @@
   <div class="info-inner">
     <div class="info-top">
       <span class="mono" id="i-count"></span>
-      <button class="esc" id="i-close" type="button"><span class="square">ESC</span><span class="bold">CLOSE</span></button>
+      <button class="esc" id="i-close" type="button"><span class="square">ESC</span><span class="bold">Close</span></button>
     </div>
     <div class="work-tag" id="i-tag"></div>
     <h2 class="bold" id="i-title"></h2>
@@ -148,16 +150,16 @@
     <div class="i-stack" id="i-stack"></div>
     <div class="i-gallery" id="i-gallery"></div>
     <p class="mono i-note" id="i-note"></p>
-    <div class="i-nav"><button class="bracket" id="i-prev" type="button">[ ← PREV ]</button><button class="bracket" id="i-next" type="button">[ NEXT → ]</button></div>
+    <div class="i-nav"><button class="bracket" id="i-prev" type="button">← Prev</button><button class="bracket" id="i-next" type="button">Next →</button></div>
   </div>
 </aside>
 
 <div id="lightbox" aria-hidden="true"><figure><img alt=""><figcaption class="mono"></figcaption></figure><button class="esc" type="button"><span class="square">ESC</span></button></div>
 
-<a class="contact-fab bold" href="mailto:keanzs7@gmail.com">[ CONTACT ]</a>
+<a class="contact-fab bold" href="mailto:keanzs7@gmail.com">Say hi ✉</a>
 
 <div id="cursor" aria-hidden="true"><i class="c-dot"></i><i class="c-ring"></i><span class="c-label mono"></span></div>
 
-<noscript><p style="color:#f03;padding:40px;font-family:sans-serif">This portfolio needs JavaScript. Email: keanzs7@gmail.com</p></noscript>
+<noscript><p style="color:#12324a;padding:40px;font-family:sans-serif">This portfolio needs JavaScript. Email: keanzs7@gmail.com</p></noscript>
 </body>
 </html>

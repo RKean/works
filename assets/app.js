@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { WORKS, PROFILE } from './data.js';
-import { createExplore, SKINS } from './explore.js?v=cam1';
+import { createExplore, SKINS } from './explore.js?v=meadow1';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -64,7 +64,7 @@ if (renderer) {
   });
 }
 
-const RED = new THREE.Color('#ff0033');
+const CYAN = new THREE.Color('#19d3e6');
 const textures = new Map();
 const loader = new THREE.TextureLoader();
 
@@ -72,23 +72,24 @@ function placeholderCanvas(w) {
   // Typographic card for confidential projects without screenshots (generated, no external assets).
   const c = document.createElement('canvas'); c.width = 1600; c.height = 1000;
   const x = c.getContext('2d');
-  const bgG = x.createLinearGradient(0, 0, 1600, 1000); bgG.addColorStop(0, '#2a0710'); bgG.addColorStop(1, '#14040a');
+  const bgG = x.createLinearGradient(0, 0, 1600, 1000); bgG.addColorStop(0, '#c9f3fb'); bgG.addColorStop(1, '#e4f9d8');
   x.fillStyle = bgG; x.fillRect(0, 0, 1600, 1000);
-  x.strokeStyle = 'rgba(255,60,100,.28)'; x.lineWidth = 2;
-  for (let i = 0; i <= 1600; i += 40) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, 1000); x.stroke(); }
-  for (let i = 0; i <= 1000; i += 40) { x.beginPath(); x.moveTo(0, i); x.lineTo(1600, i); x.stroke(); }
-  x.fillStyle = '#ff0033';
-  x.font = '600 26px "JetBrains Mono", monospace';
-  x.fillText(`${pad(WORKS.indexOf(w) + 1)} / ${pad(WORKS.length)}`, 90, 120);
-  x.fillText((w.images.length ? '' : w.note.replace(/\.$/, '')).toUpperCase(), 90, 900);
-  x.textAlign = 'right'; x.fillText(w.sector.toUpperCase(), 1510, 120); x.textAlign = 'left';
-  x.font = '900 128px Archivo, sans-serif';
-  const words = w.title.toUpperCase().split(' '); let line = '', y = 360; const lines = [];
-  for (const wd of words) { const t = line ? line + ' ' + wd : wd; if (x.measureText(t).width > 1400) { lines.push(line); line = wd; } else line = t; }
+  x.fillStyle = 'rgba(255,255,255,.75)';
+  for (let i = 20; i <= 1600; i += 44) for (let j = 20; j <= 1000; j += 44) { x.beginPath(); x.arc(i, j, 3, 0, 7); x.fill(); }
+  x.fillStyle = '#ffffff'; x.strokeStyle = '#12324a'; x.lineWidth = 8; x.beginPath(); x.roundRect(60, 60, 1480, 880, 56); x.fill(); x.stroke();
+  x.fillStyle = '#19d3e6'; x.beginPath(); x.roundRect(90, 84, 190, 60, 30); x.fill();
+  x.fillStyle = '#12324a';
+  x.font = '800 30px Nunito, Arial, sans-serif';
+  x.fillText(`${pad(WORKS.indexOf(w) + 1)} / ${pad(WORKS.length)}`, 122, 125);
+  x.fillText(w.images.length ? '' : w.note.replace(/\.$/, ''), 100, 880);
+  x.textAlign = 'right'; x.fillText(w.sector, 1490, 125); x.textAlign = 'left';
+  x.font = '700 118px Fredoka, "Arial Rounded MT Bold", Arial, sans-serif';
+  const words = w.title.split(' '); let line = '', y = 380; const lines = [];
+  for (const wd of words) { const t = line ? line + ' ' + wd : wd; if (x.measureText(t).width > 1380) { lines.push(line); line = wd; } else line = t; }
   lines.push(line);
-  lines.forEach((l, i) => x.fillText(l, 84, y + i * 124));
-  x.font = '400 30px "JetBrains Mono", monospace'; x.fillStyle = 'rgba(255,255,255,.75)';
-  x.fillText(w.stack.join('  ·  '), 90, 840);
+  lines.forEach((l, i) => x.fillText(l, 96, y + i * 124));
+  x.font = '700 30px Nunito, Arial, sans-serif'; x.fillStyle = '#007a8c';
+  x.fillText(w.stack.join('  ·  '), 100, 810);
   return c;
 }
 function placeholderTexture(w) {
@@ -126,22 +127,19 @@ vec4 samp(sampler2D t, vec2 uv, float a, float shift){
 void main(){
   vec2 uv = vUv; uv = (uv-.5)*(1. - uHover*.03) + .5;
   float tr = sin(uProg*3.14159);
-  float row = floor(uv.y*60.); uv.x += (hash(vec2(row, floor(uTime*20.)))-.5) * tr * .06;
-  float sh = .0015 + tr*.012 + uHover*.002;
-  vec4 A = samp(tA, uv, aA, sh), B = samp(tB, uv, aB, sh);
-  float n = hash(floor(vUv*vec2(32.,20.)));
-  float m = smoothstep(n-.08, n+.08, uProg*1.16-.08);
+  uv.y += sin(uv.x*10. + uTime*2.) * tr * .006; // soft wobble, no tearing
+  vec4 A = samp(tA, uv, aA, 0.), B = samp(tB, uv, aB, 0.);
+  // bubbles: round cells grow from random seeds and reveal the next work
+  vec2 cell = vUv*vec2(16.,10.); vec2 id = floor(cell); float n = hash(id);
+  float r = clamp(uProg*1.7 - n*.7, 0., 1.); float d = length(fract(cell)-.5);
+  float m = 1. - smoothstep(r*.74-.04, r*.74, d); m = uProg >= .999 ? 1. : m;
   vec4 C = mix(A, B, m);
-  vec2 g = abs(fract(vUv*vec2(32.,20.))-.5);
-  float grid = smoothstep(.48,.5,max(g.x,g.y));
-  vec3 bg = vec3(.035,0.,.008) + vec3(.35,0.,.06)*grid*.35;
+  vec3 bg = vec3(.91,.97,1.) + vec3(.06,.03,0.)*step(.46, length(fract(vUv*vec2(32.,20.))-.5));
   vec3 col = mix(bg, C.rgb, C.a);
-  float edge = (1.-smoothstep(0.,.08,abs(m-.5)))*step(.01,uProg)*step(uProg,.99);
-  col += vec3(1.,0.,.2)*edge*1.6;
-  col *= .9 + .1*sin(vUv.y*900.+uTime*8.);
-  float v = (1.-smoothstep(.35,.95,length((vUv-.5)*vec2(1.1,1.3))));
-  col *= mix(.55,1.,v);
-  col = mix(col, col*vec3(1.,.55,.6), .18);
+  float rim = (1.-smoothstep(0.,.05,abs(d - r*.74)))*step(.01,uProg)*step(uProg,.99)*step(.02,r);
+  col = mix(col, vec3(1.), rim*.8);
+  float sp = step(.985, hash(floor(vUv*vec2(80.,50.)) + floor(uTime*6.))) * tr; // twinkles while switching
+  col = mix(col, vec3(.6,.97,1.), sp);
   gl_FragColor = vec4(col,1.);
   #include <colorspace_fragment>
 }`;
@@ -149,9 +147,10 @@ void main(){
 function initGL() {
   if (!renderer) return;
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.setClearColor(0x000000, 1);
+  renderer.setClearColor(0xdff5ff, 1);
   scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x000000, 0.035);
+  scene.background = new THREE.Color(0xdff5ff);
+  scene.fog = new THREE.FogExp2(0xdff5ff, 0.03);
   camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 300);
   clock = new THREE.Clock();
 
@@ -164,7 +163,7 @@ function initGL() {
   screen = new THREE.Mesh(geo, screenMat); screen.position.set(0, 1.2, 0); scene.add(screen);
 
   // frame corners
-  const fm = new THREE.LineBasicMaterial({ color: RED, transparent: true, opacity: .9 });
+  const fm = new THREE.LineBasicMaterial({ color: 0x12324a, transparent: true, opacity: .9 });
   frame = new THREE.Group();
   const hw = SCREEN_W / 2 + .35, hh = SCREEN_H / 2 + .35, L = 1.2;
   [[-1, 1], [1, 1], [-1, -1], [1, -1]].forEach(([sx, sy]) => {
@@ -177,9 +176,9 @@ function initGL() {
 
   // glow under screen
   const gc = document.createElement('canvas'); gc.width = gc.height = 256; const gx = gc.getContext('2d');
-  const grd = gx.createRadialGradient(128, 128, 0, 128, 128, 128); grd.addColorStop(0, 'rgba(255,0,51,.55)'); grd.addColorStop(1, 'rgba(255,0,51,0)');
+  const grd = gx.createRadialGradient(128, 128, 0, 128, 128, 128); grd.addColorStop(0, 'rgba(25,211,230,.45)'); grd.addColorStop(1, 'rgba(25,211,230,0)');
   gx.fillStyle = grd; gx.fillRect(0, 0, 256, 256);
-  glow = new THREE.Mesh(new THREE.PlaneGeometry(34, 14), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(gc), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  glow = new THREE.Mesh(new THREE.PlaneGeometry(34, 14), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(gc), transparent: true, depthWrite: false }));
   glow.rotation.x = -Math.PI / 2; glow.position.set(0, -4.4, 1); scene.add(glow);
 
   // point-field terrain
@@ -187,14 +186,14 @@ function initGL() {
   for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) { pos[k++] = (i - N / 2) * S; pos[k++] = 0; pos[k++] = (j - N / 2) * S - 30; }
   const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   floorMat = new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    transparent: true, depthWrite: false,
     uniforms: { uTime: { value: 0 }, uKick: { value: 0 }, uPR: { value: renderer.getPixelRatio() } },
     vertexShader: `uniform float uTime,uKick,uPR; varying float vA;
       void main(){ vec3 p = position; float d = length(p.xz - vec2(0.,-2.));
         p.y = -4.6 + sin(p.x*.18+uTime*.7)*.45 + cos(p.z*.15+uTime*.5)*.45 + sin(d*.6 - uTime*3.)*uKick*.9*exp(-d*.06);
         vec4 mv = modelViewMatrix*vec4(p,1.); gl_Position = projectionMatrix*mv;
         gl_PointSize = uPR*(2.2 + uKick*1.5)*(14./-mv.z); vA = clamp(1. - (-mv.z)/70., 0., 1.); }`,
-    fragmentShader: `varying float vA; void main(){ vec2 c = gl_PointCoord-.5; if(length(c)>.5) discard; gl_FragColor = vec4(1.,0.,.2, vA*.85); }`,
+    fragmentShader: `varying float vA; void main(){ vec2 c = gl_PointCoord-.5; if(length(c)>.5) discard; gl_FragColor = vec4(.32,.74,.36, vA*.8); }`,
   });
   scene.add(new THREE.Points(fg, floorMat));
 
@@ -202,7 +201,7 @@ function initGL() {
   const D = 500, dp = new Float32Array(D * 3);
   for (let i = 0; i < D; i++) { dp[i * 3] = (Math.random() - .5) * 60; dp[i * 3 + 1] = Math.random() * 18 - 4; dp[i * 3 + 2] = (Math.random() - .5) * 50 - 5; }
   const dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.BufferAttribute(dp, 3));
-  dust = new THREE.Points(dg, new THREE.PointsMaterial({ color: RED, size: .06, transparent: true, opacity: .7, blending: THREE.AdditiveBlending, depthWrite: false }));
+  dust = new THREE.Points(dg, new THREE.PointsMaterial({ color: CYAN, size: .09, transparent: true, opacity: .55, depthWrite: false }));
   scene.add(dust);
 
   resize();
@@ -238,7 +237,7 @@ const statusEl = $('#status');
 function tick() {
   const t = clock.getElapsedTime(), now = performance.now(), dt = now - last; last = now;
   fpsAcc += dt; fpsN++;
-  if (fpsAcc > 500) { const fps = Math.round(1000 / (fpsAcc / fpsN)); statusEl.textContent = `Status: OPEN TO ROLES, Engine: WebGL${renderer.capabilities.isWebGL2 ? '2' : ''}, Frame: ${frameMs.toFixed(1)} ms, ${fps} FPS`; fpsAcc = 0; fpsN = 0; }
+  if (fpsAcc > 500) { fpsAcc = 0; fpsN = 0; }
   const t0 = performance.now();
   mouseS.lerp(mouse, .05);
   kick += (0 - kick) * .03; hoverScreen += (hoverTarget - hoverScreen) * .1;
@@ -292,7 +291,7 @@ function renderMeta() {
   meta.classList.remove('in');
   $('#w-idx').textContent = pad(current + 1);
   $('#w-tag').textContent = w.tag;
-  $('#w-title').innerHTML = splitWords(w.title.toUpperCase());
+  $('#w-title').innerHTML = splitWords(w.title);
   $('#w-sub').textContent = `${w.sector} · ${w.year}`;
   updateCaption();
   requestAnimationFrame(() => requestAnimationFrame(() => meta.classList.add('in')));
@@ -374,7 +373,7 @@ function buildAbout() {
   const P = PROFILE;
   $('#about-text').innerHTML = `<p>${esc(P.intro)}</p>` + P.about.map(p => `<p>${esc(p)}</p>`).join('');
   $('#facts').innerHTML = P.facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('');
-  $('#links').innerHTML = `<a class="bracket" href="mailto:${P.email}">[ EMAIL ] ${esc(P.email)}</a><a class="bracket" href="${P.phoneHref}">[ PHONE ] ${esc(P.phone)}</a>`;
+  $('#links').innerHTML = `<a class="bracket" href="mailto:${P.email}">✉ ${esc(P.email)}</a><a class="bracket" href="${P.phoneHref}">☎ ${esc(P.phone)}</a>`;
   $('#stats').innerHTML = P.stats.map(([b, s]) => `<div class="stat"><b data-count="${esc(b)}">${esc(b)}</b><span>${esc(s)}</span></div>`).join('');
   $('#skills').innerHTML = Object.entries(P.skills).map(([k, arr]) => `<div><h4>${esc(k)}</h4><div class="chips">${arr.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div></div>`).join('');
   $('#exp').innerHTML = P.experience.map(e => `<li><div class="when">${esc(e.when)}</div><div><h4>${esc(e.role)}</h4><p class="where">${esc(e.where)}</p><ul>${e.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul></div></li>`).join('');
@@ -464,7 +463,7 @@ addEventListener('mouseup', () => cur.classList.remove('down'));
 async function boot() {
   buildBar(); buildIndex(); buildAbout();
   preTarget = 25;
-  try { await Promise.race([Promise.all([document.fonts.load('900 128px Archivo'), document.fonts.load('600 26px "JetBrains Mono"'), document.fonts.load('400 30px "JetBrains Mono"')]).then(() => document.fonts.ready), new Promise(r => setTimeout(r, 2500))]); } catch (e) {}
+  try { await Promise.race([Promise.all([document.fonts.load('700 118px Fredoka'), document.fonts.load('800 30px Nunito')]).then(() => document.fonts.ready), new Promise(r => setTimeout(r, 2500))]); } catch (e) {}
   preTarget = 45;
   initGL();
   const h = location.hash.replace('#', '');
@@ -491,9 +490,12 @@ let allDoneShown = store.get('rk_done', false);
 function renderTasks() {
   const el = $('#tasks'); if (!el) return;
   const nf = explore ? explore.npcCount : 4, ns = SKINS.length;
-  const rows = [['Visit all sections', Math.min(3, tasks.sections.length), 3], ['Talk to all my friends', Math.min(nf, tasks.friends), nf], ['Try on all skins', Math.min(ns, tasks.skins.length), ns]];
-  el.innerHTML = '<div class="t-h">TASKS / 任務</div>' + rows.map(([t, a, b]) => `<div class="t-row${a >= b ? ' done' : ''}"><i></i><span>${t}</span><b>${a}/${b}</b></div>`).join('');
-  if (!allDoneShown && rows.every(([, a, b]) => a >= b)) { allDoneShown = true; store.set('rk_done', true); toast('ALL TASKS DONE · THANKS FOR EXPLORING'); }
+  const rows = [['Visit all sections', Math.min(3, tasks.sections.length), 3], ['Talk to all my friends', Math.min(nf, tasks.friends), nf], ['Try on all colours', Math.min(ns, tasks.skins.length), ns]];
+  const got = rows.reduce((n, [, a]) => n + a, 0), all = rows.reduce((n, [, , b]) => n + b, 0), pct = Math.round(got / Math.max(1, all) * 100);
+  const lvl = 1 + Math.floor(got / 3);
+  el.innerHTML = `<div class="t-h"><span class="t-badge">Lv ${lvl}</span>Quest log</div>` + rows.map(([t, a, b]) => `<div class="t-row${a >= b ? ' done' : ''}"><i></i><span>${t}</span><b>${a}/${b}</b></div>`).join('')
+    + `<div class="t-xp" role="progressbar" aria-label="Experience" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span>Experience</span><div class="t-bar"><i style="width:${pct}%"></i></div><b>${pct}%</b></div>`;
+  if (!allDoneShown && rows.every(([, a, b]) => a >= b)) { allDoneShown = true; store.set('rk_done', true); toast('All quests done · thanks for exploring!'); }
 }
 let toastT = null;
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 3200); }
@@ -504,17 +506,17 @@ function onZone(z) {
   if (!z) return;
   tutDone('ring');
   if (z.kind === 'npc') return showDialog(z.name, z.text);
-  const labels = { works: 'VIEW WORKS', about: 'ABOUT ME', contact: 'SAY HELLO', skin: 'NEW SKIN' };
+  const labels = { works: 'VIEW WORKS', about: 'ABOUT ME', contact: 'SAY HELLO', skin: 'NEW COLOUR' };
   promptLabel.textContent = z.id === 'works' ? `VIEW ${z.work.title}` : labels[z.id];
   $('.prompt-key', promptEl).textContent = IS_TOUCH ? 'TAP' : 'E';
   promptEl.classList.add('on');
-  if (z.id === 'contact') showDialog('CONTACT', `Email or call: ${PROFILE.email} · ${PROFILE.phone}`, `<a class="bracket" href="mailto:${esc(PROFILE.email)}">[ EMAIL ]</a><a class="bracket" href="${esc(PROFILE.phoneHref)}">[ CALL ]</a>`);
+  if (z.id === 'contact') showDialog('CONTACT', `Email or call: ${PROFILE.email} · ${PROFILE.phone}`, `<a class="bracket" href="mailto:${esc(PROFILE.email)}">Email</a><a class="bracket" href="${esc(PROFILE.phoneHref)}">Call</a>`);
 }
 function onAction(id, d) {
   if (id === 'works') { location.hash = 'works/' + d.work.slug; return; }
   if (id === 'about') { location.hash = 'about'; return; }
   if (id === 'contact') { location.href = 'mailto:' + PROFILE.email; return; }
-  if (id === 'skin') { store.set('rk_skin', d.index); if (!tasks.skins.includes(d.index)) tasks.skins.push(d.index); saveTasks(); toast(`SKIN · ${d.skin.name}`); }
+  if (id === 'skin') { store.set('rk_skin', d.index); if (!tasks.skins.includes(d.index)) tasks.skins.push(d.index); saveTasks(); toast(`New colour · ${d.skin.name}`); }
 }
 const doInteract = () => explore && explore.interact();
 promptEl.addEventListener('click', doInteract);
@@ -533,7 +535,7 @@ const TUT = () => [
   ['move', IS_TOUCH ? 'DRAG ANYWHERE TO MOVE' : 'USE ◀ ▲ ▼ ▶ OR WASD TO MOVE'],
   ['jump', IS_TOUCH ? 'TAP JUMP TO JUMP' : 'PRESS SPACE TO JUMP'],
   ['cam', IS_TOUCH ? 'TWO FINGERS TO ORBIT · PINCH TO ZOOM' : 'DRAG TO ORBIT · WHEEL TO ZOOM · R RESETS'],
-  ['ring', 'WALK INTO A GLOWING RING'],
+  ['ring', 'WALK INTO A GLOWING CIRCLE'],
 ];
 let tutOn = false; const tutState = new Set();
 function maybeTutorial() {
