@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { WORKS, PROFILE } from './data.js';
-import { createExplore, SKINS } from './explore.js?v=meadow1';
+import { createExplore, SKINS } from './explore.js?v=dusk1';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -27,8 +27,14 @@ requestAnimationFrame(prePump);
 /* ================= WebGL ================= */
 const canvas = $('#gl');
 let renderer, gl = null;
-try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' }); gl = renderer.getContext(); }
-catch (e) { document.documentElement.classList.add('no-gl'); renderer = null; }
+// probe WebGL on a throwaway canvas first, so browsers with WebGL off fall back quietly (no repeated renderer errors)
+function hasWebGL() { try { const c = document.createElement('canvas'); const g = c.getContext('webgl2') || c.getContext('webgl');
+  if (!g) return false; const x = g.getExtension('WEBGL_lose_context'); if (x) x.loseContext(); return true; } catch (e) { return false; } }
+if (hasWebGL()) {
+  try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' }); gl = renderer.getContext(); renderer.outputColorSpace = THREE.SRGBColorSpace; }
+  catch (e) { renderer = null; }
+}
+if (!renderer) document.documentElement.classList.add('no-gl');
 
 /* Static fallback (no WebGL, or while the GPU context is lost): show the current work as a plain image/card. */
 const html = document.documentElement;
@@ -255,7 +261,7 @@ function tick() {
   }
   if (document.hidden || glDown()) return; // nothing visible: don't burn the GPU (also avoids drawing into a lost context)
   try {
-    if (view === 'works' || !explore) renderer.render(scene, camera);
+    if (view === 'works' || !explore) { renderer.toneMapping = THREE.NoToneMapping; renderer.toneMappingExposure = 1; renderer.render(scene, camera); }
     else explore.render(view === 'explore');
     renderErrors = 0;
   } catch (e) { console.error(e); if (++renderErrors > 5) degradeGL('render error'); }
