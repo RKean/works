@@ -257,6 +257,8 @@ body[data-view=explore] #explore-view{opacity:1;visibility:visible}
 .controls{display:none}
 body[data-view=explore] .c-explore,body[data-view=works] .c-works{display:grid}
 .c-explore .key.wide{width:auto;padding:0 8px;min-width:54px}
+/* explore key hints live bottom-left on a dark plate so 3D pad labels (ABOUT ME) never sit behind them */
+body[data-view=explore] .c-explore{position:fixed;left:var(--pad);bottom:28px;margin:0;gap:12px 18px;padding:14px 16px;background:rgba(0,0,0,.6);border:1px solid #3a000c;border-radius:8px;z-index:30}
 /* tasks (top-right, under status) */
 .tasks{position:fixed;top:calc(var(--pad) + 4px);right:25px;color:var(--red);font-size:9px;line-height:1;text-transform:uppercase;display:grid;gap:7px;min-width:200px}
 .t-h{font-weight:600;letter-spacing:.18em;opacity:.7;margin-bottom:2px}
