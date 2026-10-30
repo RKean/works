@@ -1,14 +1,15 @@
 import * as THREE from 'three';
 import { WORKS, PROFILE } from './data.js';
+import { createExplore, SKINS } from './explore.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const pad = n => String(n).padStart(2, '0');
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const IS_TOUCH = matchMedia('(hover:none), (pointer:coarse)').matches;
+const IS_TOUCH = matchMedia('(pointer:coarse)').matches && navigator.maxTouchPoints > 0;
 const isMobile = () => innerWidth <= 760;
 
-let current = 0, imgIndex = 0, view = 'works';
+let current = 0, imgIndex = 0, view = 'explore', explore = null;
 
 /* ================= preloader ================= */
 const preNum = $('#pre-num'), preFill = $('#pre-fill');
@@ -168,6 +169,11 @@ function initGL() {
 
   resize();
   addEventListener('resize', resize);
+  try {
+    explore = createExplore({ renderer, WORKS, PROFILE, getTexture, mobile: IS_TOUCH || isMobile(), onZone, onAction, onTalk });
+    addEventListener('resize', () => explore.resize());
+    const sk = +localStorage.getItem('rk_skin') || 0; if (sk) explore.setSkin(sk);
+  } catch (e) { console.warn('explore disabled', e); explore = null; }
   renderer.setAnimationLoop(tick);
 }
 
@@ -210,7 +216,8 @@ function tick() {
     const hit = raycaster.intersectObject(screen).length > 0 && !document.body.classList.contains('info-open') && !overUI;
     if (hit !== (hoverTarget === 1)) { hoverTarget = hit ? 1 : 0; cursorState(hit, hit ? 'VIEW DETAILS' : ''); }
   }
-  renderer.render(scene, camera);
+  if (view === 'works' || !explore) renderer.render(scene, camera);
+  else explore.render(view === 'explore' && !document.hidden);
   frameMs = performance.now() - t0;
 }
 
@@ -335,13 +342,16 @@ function buildAbout() {
 /* ================= navigation ================= */
 const pillBg = $('.pill-bg');
 function movePill() {
-  const a = $(`.pill-nav a[data-nav="${view}"]`), nav = $('.pill-nav');
+  const a = $(`.pill-nav a[data-nav="${view === 'index' ? 'works' : view}"]`), nav = $('.pill-nav');
   const r = a.getBoundingClientRect(), n = nav.getBoundingClientRect();
   pillBg.style.width = r.width + 'px'; pillBg.style.transform = `translateX(${r.left - n.left}px)`;
   $$('.pill-nav a').forEach(x => x.classList.toggle('active', x === a));
 }
 function setView(v) {
+  if (v === 'explore' && !explore) v = 'works';
   view = v; document.body.dataset.view = v; movePill();
+  if (explore) explore.setActive(v === 'explore');
+  markSection(v === 'index' ? 'works' : v);
   if (v !== 'works') closeInfo();
   const el = $(`#${v}-view`); if (el && v !== 'works') el.scrollTop = 0;
   hoverTarget = 0; cursorState(false);
@@ -349,7 +359,7 @@ function setView(v) {
 function route() {
   const h = location.hash.replace('#', '');
   if (h.startsWith('works/')) { const i = WORKS.findIndex(w => w.slug === h.slice(6)); setView('works'); if (i >= 0) go(i, { noHash: true, force: i !== current }); return; }
-  setView(['index', 'about'].includes(h) ? h : 'works');
+  setView(['index', 'about', 'works'].includes(h) ? h : 'explore');
 }
 addEventListener('hashchange', route);
 
@@ -357,11 +367,12 @@ addEventListener('hashchange', route);
 let overUI = false;
 const flash = sel => { const k = $(sel); if (!k) return; k.classList.add('flash'); setTimeout(() => k.classList.remove('flash'), 160); };
 addEventListener('keydown', e => {
-  if (e.key === 'Escape') { if (lb.classList.contains('on')) return closeLightbox(); if (document.body.classList.contains('info-open')) return closeInfo(); if (view !== 'works') location.hash = 'works'; return; }
+  if (e.key === 'Escape') { if (lb.classList.contains('on')) return closeLightbox(); if (document.body.classList.contains('info-open')) return closeInfo(); if (view === 'index') { location.hash = 'works'; return; } if (view === 'about' || view === 'works') location.hash = 'explore'; return; }
+  if (view === 'explore') return exploreKey(e, true);
   if (view !== 'works' || lb.classList.contains('on')) return;
   if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); flash(e.key === 'ArrowRight' ? '.k-r' : '.k-dn'); go(current + 1); }
   if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); flash(e.key === 'ArrowLeft' ? '.k-l' : '.k-up'); go(current - 1); }
-  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flash('.key.wide'); document.body.classList.contains('info-open') ? closeInfo() : openInfo(); }
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flash('.k-enter'); document.body.classList.contains('info-open') ? closeInfo() : openInfo(); }
 });
 let wheelLock = 0;
 addEventListener('wheel', e => {
@@ -395,11 +406,14 @@ function cursorState(on, label = '') { cur.classList.toggle('hover', !!on); cur.
 addEventListener('mousemove', e => {
   cx = e.clientX; cy = e.clientY;
   mouse.set((cx / innerWidth) * 2 - 1, -(cy / innerHeight) * 2 + 1);
+  if (explore) explore.setMouse(mouse.x, mouse.y);
   const t = e.target.closest('a,button');
   overUI = !!e.target.closest('a,button,#info,.work-meta,#works-bar,.title-container,.pill-nav');
   if (t) cursorState(true, t.classList.contains('index-row') ? 'OPEN' : '');
   else if (!hoverTarget) cursorState(false);
 });
+addEventListener('keyup', e => { if (explore) explore.key(e.key, false); });
+addEventListener('blur', () => explore && explore.setActive(view === 'explore'));
 addEventListener('mousedown', () => cur.classList.add('down'));
 addEventListener('mouseup', () => cur.classList.remove('down'));
 (function cloop() { rx += (cx - rx) * .18; ry += (cy - ry) * .18; dot.style.transform = `translate(${cx}px,${cy}px)`; ring.style.transform = `translate(${rx}px,${ry}px)`; lab.style.transform = `translate(${rx}px,${ry}px)`; requestAnimationFrame(cloop); })();
@@ -418,8 +432,88 @@ async function boot() {
   let done = 0; firsts.forEach(p => p.then(() => { done++; preTarget = 45 + done / firsts.length * 50; }));
   await Promise.race([Promise.all(firsts), new Promise(r => setTimeout(r, 6000))]);
   await showOnScreen(WORKS[current], 0, true);
-  renderMeta(); startCycle(); preloadAround(); route(); movePill();
+  renderMeta(); startCycle(); preloadAround(); renderTasks(); route(); movePill();
+  if (view === 'explore') maybeTutorial();
   addEventListener('resize', movePill);
   preTarget = 100;
 }
 boot();
+
+/* ================= explore UI ================= */
+const promptEl = $('#prompt'), promptLabel = $('#prompt-label'), dlg = $('#dialog');
+const store = { get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+const tasks = store.get('rk_tasks', { sections: [], friends: 0, skins: [0] });
+function markSection(v) { if (!['explore', 'works', 'about'].includes(v) || tasks.sections.includes(v)) return; tasks.sections.push(v); saveTasks(); }
+function saveTasks() { store.set('rk_tasks', tasks); renderTasks(); }
+let allDoneShown = store.get('rk_done', false);
+function renderTasks() {
+  const el = $('#tasks'); if (!el) return;
+  const nf = explore ? explore.npcCount : 4, ns = SKINS.length;
+  const rows = [['Visit all sections', Math.min(3, tasks.sections.length), 3], ['Talk to all my friends', Math.min(nf, tasks.friends), nf], ['Try on all skins', Math.min(ns, tasks.skins.length), ns]];
+  el.innerHTML = '<div class="t-h">TASKS / 任務</div>' + rows.map(([t, a, b]) => `<div class="t-row${a >= b ? ' done' : ''}"><i></i><span>${t}</span><b>${a}/${b}</b></div>`).join('');
+  if (!allDoneShown && rows.every(([, a, b]) => a >= b)) { allDoneShown = true; store.set('rk_done', true); toast('ALL TASKS DONE · THANKS FOR EXPLORING'); }
+}
+let toastT = null;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 3200); }
+function onTalk(n) { tasks.friends = Math.max(tasks.friends, n); saveTasks(); tutDone('ring'); }
+function showDialog(name, text, links = '') { $('#dlg-name').textContent = name; $('#dlg-text').textContent = text; $('#dlg-links').innerHTML = links; dlg.classList.add('on'); }
+function onZone(z) {
+  promptEl.classList.remove('on'); dlg.classList.remove('on');
+  if (!z) return;
+  tutDone('ring');
+  if (z.kind === 'npc') return showDialog(z.name, z.text);
+  const labels = { works: 'VIEW WORKS', about: 'ABOUT ME', contact: 'SAY HELLO', skin: 'NEW SKIN' };
+  promptLabel.textContent = z.id === 'works' ? `VIEW ${z.work.title}` : labels[z.id];
+  $('.prompt-key', promptEl).textContent = IS_TOUCH ? 'TAP' : 'E';
+  promptEl.classList.add('on');
+  if (z.id === 'contact') showDialog('CONTACT', `Email or call: ${PROFILE.email} · ${PROFILE.phone}`, `<a class="bracket" href="mailto:${esc(PROFILE.email)}">[ EMAIL ]</a><a class="bracket" href="${esc(PROFILE.phoneHref)}">[ CALL ]</a>`);
+}
+function onAction(id, d) {
+  if (id === 'works') { location.hash = 'works/' + d.work.slug; return; }
+  if (id === 'about') { location.hash = 'about'; return; }
+  if (id === 'contact') { location.href = 'mailto:' + PROFILE.email; return; }
+  if (id === 'skin') { store.set('rk_skin', d.index); if (!tasks.skins.includes(d.index)) tasks.skins.push(d.index); saveTasks(); toast(`SKIN · ${d.skin.name}`); }
+}
+const doInteract = () => explore && explore.interact();
+promptEl.addEventListener('click', doInteract);
+const KEYMAP = { ArrowUp: '.k-up', ArrowDown: '.k-dn', ArrowLeft: '.k-l', ArrowRight: '.k-r', w: '.k-up', s: '.k-dn', a: '.k-l', d: '.k-r' };
+function exploreKey(e) {
+  if (!explore || e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key;
+  if (KEYMAP[k] || KEYMAP[k.toLowerCase()] || ['z', 'q'].includes(k.toLowerCase())) { e.preventDefault(); explore.key(k, true); flash(KEYMAP[k] || KEYMAP[k.toLowerCase()]); tutDone('move'); }
+  else if (k === ' ') { e.preventDefault(); if (!e.repeat) { explore.jump(); flash('.k-space'); tutDone('jump'); } }
+  else if (k === 'Enter' || k.toLowerCase() === 'e') { e.preventDefault(); flash('.k-e'); doInteract(); }
+}
+
+/* tutorial */
+const TUT = () => [
+  ['move', IS_TOUCH ? 'DRAG ANYWHERE TO MOVE' : 'USE ◀ ▲ ▼ ▶ OR WASD TO MOVE'],
+  ['jump', IS_TOUCH ? 'TAP JUMP TO JUMP' : 'PRESS SPACE TO JUMP'],
+  ['ring', 'WALK INTO A GLOWING RING'],
+];
+let tutOn = false; const tutState = new Set();
+function maybeTutorial() {
+  if (!explore || store.get('rk_tut', false)) return;
+  tutOn = true; document.body.classList.add('tut-on'); drawTut();
+}
+function drawTut() { $('#tut-steps').innerHTML = TUT().map(([id, t], i) => `<div class="tut-step${tutState.has(id) ? ' done' : ''}"><span class="mono">0${i + 1}</span><b class="bold">${t}</b></div>`).join(''); }
+function tutDone(id) { if (!tutOn || tutState.has(id)) return; tutState.add(id); drawTut(); if (tutState.size >= 3) setTimeout(endTut, 900); }
+function endTut() { if (!tutOn) return; tutOn = false; store.set('rk_tut', true); document.body.classList.remove('tut-on'); }
+$('#tut-skip').addEventListener('click', endTut);
+
+/* touch joystick + jump */
+const joyEl = $('#joy'), knob = $('i', joyEl); let joyId = null, jx0 = 0, jy0 = 0;
+canvas.addEventListener('touchstart', e => {
+  if (view !== 'explore' || !explore || joyId !== null) return;
+  const t = e.changedTouches[0]; joyId = t.identifier; jx0 = t.clientX; jy0 = t.clientY;
+  joyEl.style.left = jx0 + 'px'; joyEl.style.top = jy0 + 'px'; joyEl.classList.add('on'); knob.style.transform = '';
+}, { passive: true });
+canvas.addEventListener('touchmove', e => {
+  if (joyId === null) return; const t = [...e.changedTouches].find(x => x.identifier === joyId); if (!t) return;
+  let dx = t.clientX - jx0, dy = t.clientY - jy0; const L = Math.hypot(dx, dy), M = 46; if (L > M) { dx *= M / L; dy *= M / L; }
+  knob.style.transform = `translate(${dx}px,${dy}px)`; explore.setJoy(dx / M, dy / M); if (L > 12) tutDone('move');
+}, { passive: true });
+const joyEnd = e => { if (joyId === null || ![...e.changedTouches].some(x => x.identifier === joyId)) return; joyId = null; joyEl.classList.remove('on'); explore && explore.setJoy(0, 0); };
+canvas.addEventListener('touchend', joyEnd); canvas.addEventListener('touchcancel', joyEnd);
+$('#jump-btn').addEventListener('touchstart', e => { e.preventDefault(); explore && explore.jump(); tutDone('jump'); }, { passive: false });
+$('#jump-btn').addEventListener('click', () => { explore && explore.jump(); tutDone('jump'); });

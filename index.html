@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>IRFAN © 26’ | Works · Senior PHP / Laravel Developer</title>
+<title>IRFAN © 26’ | Explore · Senior PHP / Laravel Developer</title>
 <meta name="description" content="Selected works of Irfan bin Zainuddin, Senior PHP / Laravel Developer in Kuala Lumpur: government e-procurement, BI dashboards, HRMS and more.">
 <meta name="theme-color" content="#000000">
 <meta property="og:title" content="IRFAN © 26’ | Works">
@@ -14,16 +14,16 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
-<script type="importmap">{"imports":{"three":"./assets/vendor/three.module.min.js"}}</script>
+<script type="importmap">{"imports":{"three":"./assets/vendor/three.module.min.js","three/addons/":"./assets/vendor/addons/"}}</script>
 <script type="module" src="assets/app.js"></script>
 </head>
-<body class="is-loading" data-view="works">
+<body class="is-loading" data-view="explore">
 
 <div id="preloader" aria-hidden="true">
   <div class="pre-mark"><span class="pre-dot"></span><span class="pre-dot"></span></div>
   <div class="pre-count bold"><span id="pre-num">000</span><sup>%</sup></div>
   <div class="pre-bar"><i id="pre-fill"></i></div>
-  <div class="pre-label mono">BOOTING WORKS.EXE</div>
+  <div class="pre-label mono">BOOTING EXPLORE.EXE</div>
 </div>
 
 <canvas id="gl" aria-hidden="true"></canvas>
@@ -31,15 +31,22 @@
 <div class="grain" aria-hidden="true"></div>
 
 <header class="title-container">
-  <a href="#works" class="logo bold" data-nav="works">IRFAN <span>©</span> 26’</a>
+  <a href="#explore" class="logo bold">IRFAN <span>©</span> 26’</a>
   <h2 class="jp">ソフトウェア開発者 · PEMBANGUN PERISIAN</h2>
   <p class="role">SENIOR PHP / LARAVEL<br>DEVELOPER</p>
   <p class="role dim">BASED IN KUALA LUMPUR</p>
-  <div class="controls" aria-hidden="true">
+  <div class="controls c-explore" aria-hidden="true">
+    <div class="keys">
+      <span class="key k-up">▲</span><span class="key k-l">◀</span><span class="key k-dn">▼</span><span class="key k-r">▶</span>
+    </div><span class="ctl-label">CONTROL</span>
+    <span class="key wide k-space">SPACE</span><span class="ctl-label">JUMP</span>
+    <span class="key wide k-e">E / ENTER</span><span class="ctl-label">INTERACT</span>
+  </div>
+  <div class="controls c-works" aria-hidden="true">
     <div class="keys">
       <span class="key k-up">▲</span><span class="key k-l">◀</span><span class="key k-dn">▼</span><span class="key k-r">▶</span>
     </div><span class="ctl-label">BROWSE</span>
-    <span class="key wide">ENTER</span><span class="ctl-label">DETAILS</span>
+    <span class="key wide k-enter">ENTER</span><span class="ctl-label">DETAILS</span>
   </div>
 </header>
 
@@ -47,12 +54,27 @@
 
 <nav class="pill-nav" aria-label="Main">
   <span class="pill-bg" aria-hidden="true"></span>
+  <a href="#explore" data-nav="explore">EXPLORE</a>
   <a href="#works" data-nav="works">WORKS</a>
-  <a href="#index" data-nav="index">INDEX</a>
   <a href="#about" data-nav="about">ABOUT</a>
 </nav>
 
 <main>
+  <!-- EXPLORE (3D plaza) -->
+  <section id="explore-view" class="view" aria-label="Explore">
+    <div class="tasks mono" id="tasks" aria-live="polite"></div>
+    <div class="prompt" id="prompt" role="button" tabindex="0"><span class="prompt-key bold">E</span><span class="prompt-label bold" id="prompt-label"></span></div>
+    <div class="dialog" id="dialog" aria-live="polite"><div class="dlg-name bold" id="dlg-name"></div><p id="dlg-text"></p><div class="dlg-links" id="dlg-links"></div></div>
+    <div class="tutorial" id="tutorial">
+      <div class="tut-steps" id="tut-steps"></div>
+      <button class="skip bold" id="tut-skip" type="button">SKIP</button>
+    </div>
+    <div class="toast bold" id="toast"></div>
+    <div class="joy" id="joy" aria-hidden="true"><i></i></div>
+    <button class="jump-btn bold" id="jump-btn" type="button" aria-label="Jump">JUMP</button>
+    <noscript></noscript>
+  </section>
+
   <!-- WORKS (3D) -->
   <section id="works-view" class="view" aria-label="Works">
     <div class="work-meta">
@@ -63,6 +85,7 @@
       <button class="bracket" id="w-open" type="button">[ VIEW DETAILS ]</button>
     </div>
     <div class="caption mono" id="w-caption"></div>
+    <a class="bracket list-link" href="#index">[ INDEX VIEW ]</a>
 
     <div id="works-bar">
       <div class="works-bottom-left">
@@ -101,7 +124,7 @@
       <div class="skills" id="skills"></div>
       <h3 class="sec bold">EXPERIENCE <span>/ 経験</span></h3>
       <ol class="exp" id="exp"></ol>
-      <footer class="foot mono"><span>© 2026 Irfan bin Zainuddin · Kuala Lumpur, Malaysia</span><a href="#works" data-nav="works">[ BACK TO WORKS ]</a></footer>
+      <footer class="foot mono"><span>© 2026 Irfan bin Zainuddin · Kuala Lumpur, Malaysia</span><a href="#explore">[ BACK TO EXPLORE ]</a></footer>
     </div>
   </section>
 </main>
