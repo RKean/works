@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { WORKS, PROFILE } from './data.js';
-import { createExplore, SKINS } from './explore.js';
+import { createExplore, SKINS } from './explore.js?v=cam1';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -573,7 +573,7 @@ const joyEnd = e => { if (pinch && e.touches.length < 2) { pinch = e.touches.len
 canvas.addEventListener('touchend', joyEnd); canvas.addEventListener('touchcancel', joyEnd);
 $('#jump-btn').addEventListener('touchstart', e => { e.preventDefault(); explore && explore.jump(); tutDone('jump'); }, { passive: false });
 $('#jump-btn').addEventListener('click', () => { explore && explore.jump(); tutDone('jump'); });
-$('#cam-btn').addEventListener('click', () => { explore && explore.resetCam(); });
+{ const cb = $('#cam-btn'); if (cb) cb.addEventListener('click', () => { explore && explore.resetCam(); }); }
 
 /* desktop camera: drag on empty space (left or right button) to orbit */
 let drag = null;
