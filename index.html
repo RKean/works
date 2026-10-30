@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>IRFAN © 26’ | Works · Senior PHP / Laravel Developer</title>
+<meta name="description" content="Selected works of Irfan bin Zainuddin, Senior PHP / Laravel Developer in Kuala Lumpur: government e-procurement, BI dashboards, HRMS and more.">
+<meta name="theme-color" content="#000000">
+<meta property="og:title" content="IRFAN © 26’ | Works">
+<meta property="og:description" content="Secure, workflow-heavy web systems for government and enterprise clients.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<script type="importmap">{"imports":{"three":"./assets/vendor/three.module.min.js"}}</script>
+<script type="module" src="assets/app.js"></script>
+</head>
+<body class="is-loading" data-view="works">
+
+<div id="preloader" aria-hidden="true">
+  <div class="pre-mark"><span class="pre-dot"></span><span class="pre-dot"></span></div>
+  <div class="pre-count bold"><span id="pre-num">000</span><sup>%</sup></div>
+  <div class="pre-bar"><i id="pre-fill"></i></div>
+  <div class="pre-label mono">BOOTING WORKS.EXE</div>
+</div>
+
+<canvas id="gl" aria-hidden="true"></canvas>
+<div id="fallback" aria-hidden="true"><img alt=""></div>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="title-container">
+  <a href="#works" class="logo bold" data-nav="works">IRFAN <span>©</span> 26’</a>
+  <h2 class="jp">ソフトウェア開発者 · PEMBANGUN PERISIAN</h2>
+  <p class="role">SENIOR PHP / LARAVEL<br>DEVELOPER</p>
+  <p class="role dim">BASED IN KUALA LUMPUR</p>
+  <div class="controls" aria-hidden="true">
+    <div class="keys">
+      <span class="key k-up">▲</span><span class="key k-l">◀</span><span class="key k-dn">▼</span><span class="key k-r">▶</span>
+    </div><span class="ctl-label">BROWSE</span>
+    <span class="key wide">ENTER</span><span class="ctl-label">DETAILS</span>
+  </div>
+</header>
+
+<div class="status mono" id="status">Status: OPEN TO ROLES, Engine: —, Frame: — ms, — FPS</div>
+
+<nav class="pill-nav" aria-label="Main">
+  <span class="pill-bg" aria-hidden="true"></span>
+  <a href="#works" data-nav="works">WORKS</a>
+  <a href="#index" data-nav="index">INDEX</a>
+  <a href="#about" data-nav="about">ABOUT</a>
+</nav>
+
+<main>
+  <!-- WORKS (3D) -->
+  <section id="works-view" class="view" aria-label="Works">
+    <div class="work-meta">
+      <div class="work-count mono"><span id="w-idx">01</span> / <span id="w-total">17</span></div>
+      <div class="work-tag" id="w-tag">—</div>
+      <h1 class="work-title bold" id="w-title">—</h1>
+      <p class="work-sub mono" id="w-sub">—</p>
+      <button class="bracket" id="w-open" type="button">[ VIEW DETAILS ]</button>
+    </div>
+    <div class="caption mono" id="w-caption"></div>
+
+    <div id="works-bar">
+      <div class="works-bottom-left">
+        <button class="tri left" id="prev" aria-label="Previous work"></button>
+        <button class="tri right" id="next" aria-label="Next work"></button>
+        <h2 class="bold works-instruction desk">NXT / PREV.</h2>
+        <h2 class="bold works-instruction mob">SWIPE UP / DWN.</h2>
+      </div>
+      <div class="bar-container" id="bar" role="tablist" aria-label="Works"></div>
+    </div>
+  </section>
+
+  <!-- INDEX -->
+  <section id="index-view" class="view" aria-label="Index of works">
+    <div class="index-inner">
+      <div class="big-title bold" aria-hidden="true">INDEX</div>
+      <p class="index-note mono">Source code for client projects is private. Screenshots come from each system’s user manuals (names, amounts and contact details blurred) or from local runs with invented demo data.</p>
+      <ol class="index-list" id="index-list"></ol>
+    </div>
+    <div class="index-float" id="index-float"><img alt=""></div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about-view" class="view" aria-label="About">
+    <div class="about-inner">
+      <div class="big-title bold" aria-hidden="true">IRFAN</div>
+      <div class="about-cols">
+        <div class="half" id="about-text"></div>
+        <div class="half">
+          <dl class="facts" id="facts"></dl>
+          <div class="links" id="links"></div>
+        </div>
+      </div>
+      <div class="stats" id="stats"></div>
+      <h3 class="sec bold">SKILLS <span>/ 技術</span></h3>
+      <div class="skills" id="skills"></div>
+      <h3 class="sec bold">EXPERIENCE <span>/ 経験</span></h3>
+      <ol class="exp" id="exp"></ol>
+      <footer class="foot mono"><span>© 2026 Irfan bin Zainuddin · Kuala Lumpur, Malaysia</span><a href="#works" data-nav="works">[ BACK TO WORKS ]</a></footer>
+    </div>
+  </section>
+</main>
+
+<!-- INFO PANEL -->
+<aside id="info" aria-hidden="true" aria-label="Project details">
+  <div class="info-inner">
+    <div class="info-top">
+      <span class="mono" id="i-count"></span>
+      <button class="esc" id="i-close" type="button"><span class="square">ESC</span><span class="bold">CLOSE</span></button>
+    </div>
+    <div class="work-tag" id="i-tag"></div>
+    <h2 class="bold" id="i-title"></h2>
+    <p class="mono i-sub" id="i-sub"></p>
+    <p class="i-desc" id="i-desc"></p>
+    <ul class="i-points" id="i-points"></ul>
+    <div class="i-stack" id="i-stack"></div>
+    <div class="i-gallery" id="i-gallery"></div>
+    <p class="mono i-note" id="i-note"></p>
+    <div class="i-nav"><button class="bracket" id="i-prev" type="button">[ ← PREV ]</button><button class="bracket" id="i-next" type="button">[ NEXT → ]</button></div>
+  </div>
+</aside>
+
+<div id="lightbox" aria-hidden="true"><figure><img alt=""><figcaption class="mono"></figcaption></figure><button class="esc" type="button"><span class="square">ESC</span></button></div>
+
+<a class="contact-fab bold" href="mailto:keanzs7@gmail.com">[ CONTACT ]</a>
+
+<div id="cursor" aria-hidden="true"><i class="c-dot"></i><i class="c-ring"></i><span class="c-label mono"></span></div>
+
+<noscript><p style="color:#f03;padding:40px;font-family:sans-serif">This portfolio needs JavaScript. Email: keanzs7@gmail.com</p></noscript>
+</body>
+</html>
