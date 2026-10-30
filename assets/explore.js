@@ -221,7 +221,7 @@ export function createExplore({ renderer, WORKS, PROFILE, getTexture, onZone, on
       u.tA.value = u.tB.value; u.aA.value = u.aB.value; u.tB.value = t; u.aB.value = t.userData.aspect; u.uProg.value = 0; bTween = { s: clock.elapsedTime }; });
   }
   anim.push(t => { boardMat.uniforms.uTime.value = t; if (bTween) { const p = Math.min(1, (t - bTween.s) / 1.1); boardMat.uniforms.uProg.value = p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; if (p >= 1) { const u = boardMat.uniforms; u.tA.value = u.tB.value; u.aA.value = u.aB.value; u.uProg.value = 0; bTween = null; } } });
-  let boardTimer = setInterval(() => { if (active) showBoard(bIdx + 1); }, 5200);
+  let boardTimer = setInterval(() => { if (active && !(zone && zone.id === 'works')) showBoard(bIdx + 1); }, 5200);
   // chevrons above the pad
   const chev = new THREE.Mesh(sgeo, new THREE.MeshBasicMaterial({ map: neonSign('▼', { color: RED, frame: false, w: 256, h: 256, size: 200, font: 'sans-serif' }), color: new THREE.Color(3, .2, .6), transparent: true, toneMapped: false, depthWrite: false }));
   chev.scale.set(1.1, 1.1, 1); scene.add(chev);
