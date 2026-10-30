@@ -5,6 +5,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
 const RED = '#ff0033';
 export const SKINS = [
@@ -74,16 +75,16 @@ function floorTex() {
 
 /* ---------- shaders ---------- */
 const padFS = `uniform float uTime, uOn; uniform vec3 uCol; varying vec2 vUv;
-float arc(float r, float w, float a, float spd, float gaps, float rr){ float band = smoothstep(w, 0., abs(rr - r));
+float arc(float r, float w, float a, float spd, float gaps, float rr){ float band = (1. - smoothstep(0., w, abs(rr - r)));
   float g = step(.35, fract((a / 6.2831 + uTime * spd) * gaps)); return band * g; }
-void main(){ vec2 p = vUv * 2. - 1.; float rr = length(p); float a = atan(p.y, p.x);
+void main(){ vec2 p = vUv * 2. - 1.; float rr = length(p); float a = atan(p.y, abs(p.x) < 1e-4 ? 1e-4 : p.x);
   float k = arc(.92, .03, a, .05, 3., rr) + arc(.78, .018, a, -.09, 5., rr) * .9 + arc(.62, .012, a, .14, 2., rr) * .7;
-  float pulse = smoothstep(.02, 0., abs(rr - fract(uTime * .45) * .95)) * (1. - rr) * .9;
-  float disc = smoothstep(1., .0, rr) * .10;
+  float pulse = (1. - smoothstep(0., .02, abs(rr - fract(uTime * .45) * .95))) * (1. - rr) * .9;
+  float disc = (1. - smoothstep(0., 1., rr)) * .10;
   vec3 col = mix(uCol, vec3(1.), step(.7, fract(a * 1.5 / 6.2831 + uTime * .1)) * .6) * (k + pulse) * (1.4 + uOn * 1.8) + uCol * disc * (1. + uOn * 2.);
   gl_FragColor = vec4(col, 1.); }`;
 const beamFS = `uniform float uTime, uOn; uniform vec3 uCol; varying vec2 vUv;
-void main(){ float f = pow(1. - vUv.y, 2.2) * (.25 + uOn * .55); f *= .7 + .3 * sin(vUv.y * 40. - uTime * 6.); gl_FragColor = vec4(uCol * f * 1.6, 1.); }`;
+void main(){ float f = pow(clamp(1. - vUv.y, 0., 1.), 2.2) * (.25 + uOn * .55); f *= .7 + .3 * sin(vUv.y * 40. - uTime * 6.); gl_FragColor = vec4(uCol * f * 1.6, 1.); }`;
 const uvVS = `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`;
 const boardFS = `uniform sampler2D tA, tB; uniform float aA, aB, uProg, uTime, uAsp; varying vec2 vUv;
 vec2 fit(vec2 uv, float a){ vec2 s = a > uAsp ? vec2(1., uAsp / a) : vec2(a / uAsp, 1.); return (uv - .5) / s + .5; }
@@ -187,7 +188,7 @@ export function createExplore({ renderer, WORKS, PROFILE, getTexture, onZone, on
 
   // red light streaks
   const streakMat = new THREE.ShaderMaterial({ uniforms: { uTime: { value: 0 } }, vertexShader: uvVS, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false,
-    fragmentShader: `uniform float uTime; varying vec2 vUv; void main(){ float head = fract(uTime * .25 + vUv.y * .0); float d = vUv.x - head; float tail = smoothstep(-.45, 0., d) * step(d, 0.); float core = smoothstep(.5, 0., abs(vUv.y - .5));
+    fragmentShader: `uniform float uTime; varying vec2 vUv; void main(){ float head = fract(uTime * .25 + vUv.y * .0); float d = vUv.x - head; float tail = smoothstep(-.45, 0., d) * step(d, 0.); float core = (1. - smoothstep(0., .5, abs(vUv.y - .5)));
       gl_FragColor = vec4(vec3(1., .0, .2) * (tail * 3. + .25) * core, 1.); }` });
   [[-6, 2.2, -12, 26, .2, .25], [8, 6.5, -13, 30, -.15, 0], [-14, 1.2, 4, 22, Math.PI / 2 + .25, 0], [14, 1.6, -4, 22, Math.PI / 2 - .2, 0], [0, 12, -16, 40, .05, 0]].forEach(([x, y, z, L, ry, rz], i) => {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(L, .09), streakMat.clone()); m.position.set(x, y, z); m.rotation.set(0, ry, rz); scene.add(m);
@@ -237,14 +238,14 @@ export function createExplore({ renderer, WORKS, PROFILE, getTexture, onZone, on
     const beam = new THREE.Mesh(new THREE.CylinderGeometry(r * 1.05, r * 1.05, 3.2, 40, 1, true), new THREE.ShaderMaterial({ uniforms: u, vertexShader: uvVS, fragmentShader: beamFS, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, toneMapped: false }));
     beam.position.set(x, 1.6, z); scene.add(beam);
     const lab = new THREE.Sprite(new THREE.SpriteMaterial({ map: pillLabel(label), toneMapped: false, depthWrite: false, color: new THREE.Color(1.4, 1.4, 1.4) }));
-    lab.scale.set(3.2, .8, 1); lab.position.set(x, 3.7, z); scene.add(lab);
+    const ly = id === 'works' ? 3.7 : 3.05; lab.scale.set(3.2, .8, 1); lab.position.set(x, ly, z); scene.add(lab);
     const zn = { id, x, z, r, u, lab, label, kind: 'pad' }; zones.push(zn);
-    anim.push(t => { u.uTime.value = t; lab.position.y = 3.7 + Math.sin(t * 2 + x) * .08; });
+    anim.push(t => { u.uTime.value = t; lab.position.y = ly + Math.sin(t * 2 + x) * .08; });
     return zn;
   }
   addPad('works', 0, -6.4, 'VIEW WORKS');
-  addPad('about', -8.5, -1.5, 'ABOUT ME', '#ff0033');
-  addPad('contact', 8.5, -1.5, 'SAY HELLO', '#ff0033');
+  addPad('about', -7.6, -1.5, 'ABOUT ME', '#ff0033');
+  addPad('contact', 7.6, -1.5, 'SAY HELLO', '#ff0033');
   addPad('skin', 7.5, 8.5, 'NEW SKIN', '#ffffff', 1.6);
   chev.position.set(0, 5.2, -6.4); anim.push(t => { chev.position.y = 5.2 + Math.sin(t * 3) * .15; });
 
@@ -301,15 +302,21 @@ export function createExplore({ renderer, WORKS, PROFILE, getTexture, onZone, on
   /* ---------- post ---------- */
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
+  // Guard: some GPUs (notably NVIDIA/ANGLE) emit NaN/Inf for edge-case fragments; bloom then smears them into
+  // growing black blocks. Clamp every pixel to a finite HDR range before bloom.
+  composer.addPass(new ShaderPass({ uniforms: { tDiffuse: { value: null } }, vertexShader: uvVS,
+    fragmentShader: `uniform sampler2D tDiffuse; varying vec2 vUv; void main(){ vec4 c = texture2D(tDiffuse, vUv);
+      bvec4 bad = bvec4(!(c.r >= 0. && c.r < 1e4), !(c.g >= 0. && c.g < 1e4), !(c.b >= 0. && c.b < 1e4), !(c.a >= 0. && c.a < 1e4));
+      if (any(bad)) c = vec4(0., 0., 0., 1.); gl_FragColor = vec4(min(c.rgb, vec3(24.)), 1.); }` }));
   const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), mobile ? .75 : .95, .55, .62); composer.addPass(bloom);
   composer.addPass(new OutputPass());
 
   /* ---------- camera ---------- */
-  const camOff = new THREE.Vector3(), camPos = new THREE.Vector3(0, 5, 14), look = new THREE.Vector3(0, 1.5, 0), lookS = new THREE.Vector3(0, 1.5, 0);
+  let lookLift = 0; const camOff = new THREE.Vector3(), camPos = new THREE.Vector3(0, 5, 14), look = new THREE.Vector3(0, 1.5, 0), lookS = new THREE.Vector3(0, 1.5, 0);
   function resize() {
     camera.aspect = innerWidth / innerHeight; const portrait = innerHeight > innerWidth;
     camera.fov = portrait ? 68 : 50; camera.updateProjectionMatrix();
-    camOff.set(0, portrait ? 6.2 : 4.4, portrait ? 11.5 : 9.6);
+    camOff.set(0, portrait ? 6.2 : 4.4, portrait ? 11.5 : 9.6); cap.visible = !portrait; lookLift = portrait ? .9 : 0;
     composer.setSize(innerWidth, innerHeight); composer.setPixelRatio(renderer.getPixelRatio());
     mirror.getRenderTarget().setSize(innerWidth * scale, innerHeight * scale);
   }
@@ -368,7 +375,7 @@ export function createExplore({ renderer, WORKS, PROFILE, getTexture, onZone, on
     const off = camOff.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), -mouseS.x * .22); off.y += mouseS.y * .8;
     const target = new THREE.Vector3(player.position.x * .85, 0, player.position.z).add(off);
     camPos.lerp(target, 1 - Math.exp(-dt * 3.2)); camera.position.copy(camPos);
-    look.set(player.position.x * .9, 1.3 + player.position.y * .35, player.position.z - 3.2); lookS.lerp(look, 1 - Math.exp(-dt * 5)); camera.lookAt(lookS);
+    look.set(player.position.x * .9, 1.3 + lookLift + player.position.y * .35, player.position.z - 3.2); lookS.lerp(look, 1 - Math.exp(-dt * 5)); camera.lookAt(lookS);
     zoneUpdate();
     for (const f of anim) f(t, dt);
   }

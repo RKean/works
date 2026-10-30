@@ -28,18 +28,53 @@ requestAnimationFrame(prePump);
 const canvas = $('#gl');
 let renderer, gl = null;
 try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' }); gl = renderer.getContext(); }
-catch (e) { document.documentElement.classList.add('no-gl'); }
+catch (e) { document.documentElement.classList.add('no-gl'); renderer = null; }
+
+/* Static fallback (no WebGL, or while the GPU context is lost): show the current work as a plain image/card. */
+const html = document.documentElement;
+const glDown = () => html.classList.contains('no-gl') || html.classList.contains('gl-lost');
+const phCache = new Map();
+function showFallback(w = WORKS[current], i = imgIndex) {
+  const img = $('#fallback img');
+  if (w.images.length) img.src = w.images[Math.min(i, w.images.length - 1)].src;
+  else { if (!phCache.has(w.slug)) phCache.set(w.slug, placeholderCanvas(w).toDataURL('image/png')); img.src = phCache.get(w.slug); }
+  img.alt = w.title; img.classList.toggle('ph', !w.images.length);
+}
+/* WebGL context loss (GPU reset, driver update, memory pressure, too many tabs): without handling, the canvas stays black. */
+let lostCount = 0, lostTimer = null, renderErrors = 0;
+function degradeGL(reason) {
+  if (!renderer) return; console.warn('WebGL disabled:', reason);
+  try { renderer.setAnimationLoop(null); } catch (e) {}
+  if (explore) { try { explore.dispose(); } catch (e) {} explore = null; }
+  renderer = null; html.classList.remove('gl-lost'); html.classList.add('no-gl');
+  showFallback(); if (view === 'explore') location.hash = 'works';
+}
+if (renderer) {
+  canvas.addEventListener('webglcontextlost', e => {
+    e.preventDefault(); lostCount++; html.classList.add('gl-lost'); showFallback();
+    clearTimeout(lostTimer);
+    if (lostCount >= 3) return degradeGL('context lost repeatedly');
+    lostTimer = setTimeout(() => { if (gl && gl.isContextLost()) degradeGL('context not restored'); }, 5000);
+  });
+  canvas.addEventListener('webglcontextrestored', () => {
+    clearTimeout(lostTimer); if (!renderer) return;
+    textures.forEach(t => { t.needsUpdate = true; });
+    resize(); if (explore) explore.resize();
+    requestAnimationFrame(() => html.classList.remove('gl-lost'));
+  });
+}
 
 const RED = new THREE.Color('#ff0033');
 const textures = new Map();
 const loader = new THREE.TextureLoader();
 
-function placeholderTexture(w) {
+function placeholderCanvas(w) {
   // Typographic card for confidential projects without screenshots (generated, no external assets).
   const c = document.createElement('canvas'); c.width = 1600; c.height = 1000;
   const x = c.getContext('2d');
-  x.fillStyle = '#050001'; x.fillRect(0, 0, 1600, 1000);
-  x.strokeStyle = 'rgba(255,0,51,.16)'; x.lineWidth = 1;
+  const bgG = x.createLinearGradient(0, 0, 1600, 1000); bgG.addColorStop(0, '#2a0710'); bgG.addColorStop(1, '#14040a');
+  x.fillStyle = bgG; x.fillRect(0, 0, 1600, 1000);
+  x.strokeStyle = 'rgba(255,60,100,.28)'; x.lineWidth = 2;
   for (let i = 0; i <= 1600; i += 40) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, 1000); x.stroke(); }
   for (let i = 0; i <= 1000; i += 40) { x.beginPath(); x.moveTo(0, i); x.lineTo(1600, i); x.stroke(); }
   x.fillStyle = '#ff0033';
@@ -54,7 +89,10 @@ function placeholderTexture(w) {
   lines.forEach((l, i) => x.fillText(l, 84, y + i * 124));
   x.font = '400 30px "JetBrains Mono", monospace'; x.fillStyle = 'rgba(255,255,255,.75)';
   x.fillText(w.stack.join('  ·  '), 90, 840);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.userData.aspect = 1.6; return t;
+  return c;
+}
+function placeholderTexture(w) {
+  const t = new THREE.CanvasTexture(placeholderCanvas(w)); t.colorSpace = THREE.SRGBColorSpace; t.userData.aspect = 1.6; return t;
 }
 function getTexture(w, i) {
   const key = w.images.length ? w.images[i].src : 'ph:' + w.slug;
@@ -101,7 +139,7 @@ void main(){
   float edge = (1.-smoothstep(0.,.08,abs(m-.5)))*step(.01,uProg)*step(uProg,.99);
   col += vec3(1.,0.,.2)*edge*1.6;
   col *= .9 + .1*sin(vUv.y*900.+uTime*8.);
-  float v = smoothstep(.95,.35,length((vUv-.5)*vec2(1.1,1.3)));
+  float v = (1.-smoothstep(.35,.95,length((vUv-.5)*vec2(1.1,1.3))));
   col *= mix(.55,1.,v);
   col = mix(col, col*vec3(1.,.55,.6), .18);
   gl_FragColor = vec4(col,1.);
@@ -216,16 +254,19 @@ function tick() {
     const hit = raycaster.intersectObject(screen).length > 0 && !document.body.classList.contains('info-open') && !overUI;
     if (hit !== (hoverTarget === 1)) { hoverTarget = hit ? 1 : 0; cursorState(hit, hit ? 'VIEW DETAILS' : ''); }
   }
-  if (view === 'works' || !explore) renderer.render(scene, camera);
-  else explore.render(view === 'explore' && !document.hidden);
+  if (document.hidden || glDown()) return; // nothing visible: don't burn the GPU (also avoids drawing into a lost context)
+  try {
+    if (view === 'works' || !explore) renderer.render(scene, camera);
+    else explore.render(view === 'explore');
+    renderErrors = 0;
+  } catch (e) { console.error(e); if (++renderErrors > 5) degradeGL('render error'); }
   frameMs = performance.now() - t0;
 }
 
 /* screen transitions */
 let tween = null;
 function showOnScreen(w, i, immediate) {
-  const fallbackImg = $('#fallback img');
-  if (!renderer) { fallbackImg.src = w.images.length ? w.images[i].src : ''; fallbackImg.style.display = w.images.length ? '' : 'none'; return Promise.resolve(); }
+  if (!renderer || glDown()) { showFallback(w, i); if (!renderer) return Promise.resolve(); }
   return getTexture(w, i).then(tex => {
     const u = screenMat.uniforms;
     if (immediate || !u.tA.value) { u.tA.value = u.tB.value = tex; u.aA.value = u.aB.value = tex.userData.aspect; u.uProg.value = 0; return; }
