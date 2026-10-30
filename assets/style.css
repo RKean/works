@@ -253,7 +253,8 @@ body[data-view=index]::after,body[data-view=about]::after{opacity:1}
 /* ================= EXPLORE (home) ================= */
 body[data-view=explore] #explore-view{opacity:1;visibility:visible}
 #explore-view{pointer-events:none}
-#explore-view .prompt.on,#explore-view .dialog.on,#explore-view .tutorial,#explore-view .jump-btn{pointer-events:auto}
+#explore-view .prompt.on,#explore-view .dialog.on,#explore-view .tutorial,#explore-view .jump-btn,#explore-view .cam-btn{pointer-events:auto}
+#gl{touch-action:none}
 .controls{display:none}
 body[data-view=explore] .c-explore,body[data-view=works] .c-works{display:grid}
 .c-explore .key.wide{width:auto;padding:0 8px;min-width:54px}
@@ -299,10 +300,15 @@ body.tut-on .contact-fab{opacity:.0;pointer-events:none}
 .joy.on{opacity:1}
 .joy i{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:var(--red);box-shadow:0 0 20px var(--red)}
 .jump-btn{display:none}
+.cam-btn,.cam-hint{display:none}
 .list-link{position:fixed;right:25px;bottom:150px}
 @media (hover:none) and (pointer:coarse){
   .jump-btn{display:grid;place-items:center;position:fixed;right:20px;bottom:130px;width:66px;height:66px;border-radius:50%;background:var(--red);color:#000;font-size:10px;box-shadow:0 0 24px rgba(255,0,51,.6)}
   .jump-btn:active{transform:scale(.92);background:#fff}
+  .cam-btn{display:grid;place-items:center;position:fixed;right:28px;bottom:208px;width:50px;height:50px;border-radius:50%;background:rgba(0,0,0,.7);border:1px solid var(--red);color:var(--red);font-size:9px;letter-spacing:.02em}
+  .cam-btn:active{transform:scale(.92);background:var(--red);color:#000}
+  .cam-hint{display:block;position:fixed;right:20px;bottom:100px;color:var(--red);font-size:8px;opacity:.7;letter-spacing:.04em;pointer-events:none}
+  body.tut-on .cam-hint{opacity:0}
 }
 @media (max-width:760px){
   .tasks{top:auto;bottom:118px;left:20px;right:auto;min-width:0;font-size:8px;gap:5px;max-width:58vw}

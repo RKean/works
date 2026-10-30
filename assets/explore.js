@@ -122,7 +122,7 @@ function makeBlob(color, scale = 1, antenna = true) {
 }
 
 /* ================================================================ */
-export function createExplore({ renderer, WORKS, PROFILE, getTexture, onZone, onAction, onTalk, mobile }) {
+export function createExplore({ renderer, WORKS, PROFILE, getTexture, onZone, onAction, onTalk, mobile, zoom: zoom0 = 1, onZoom }) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x020203);
   scene.fog = new THREE.FogExp2(0x020203, .03);
@@ -130,6 +130,7 @@ export function createExplore({ renderer, WORKS, PROFILE, getTexture, onZone, on
   const clock = new THREE.Clock();
   const anim = []; // per-frame callbacks
   const solids = []; // xz AABBs {x0,x1,z0,z1}
+  const occl = []; // meshes the camera must not pass through
   const solid = (x, z, w, d) => solids.push({ x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + d / 2 });
 
   scene.add(new THREE.AmbientLight(0x404060, .6));
@@ -161,7 +162,7 @@ export function createExplore({ renderer, WORKS, PROFILE, getTexture, onZone, on
   const sgeo = new THREE.PlaneGeometry(1, 1);
   let si = 0, vi = 0;
   towers.forEach(([x, z, w, h, d], k) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), towerMat); m.position.set(x, h / 2, z); scene.add(m); solid(x, z, w, d);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), towerMat); m.position.set(x, h / 2, z); scene.add(m); occl.push(m); solid(x, z, w, d);
     // the face looking at the plaza centre
     const toC = new THREE.Vector2(-x, -z); const faceX = Math.abs(toC.x) > Math.abs(toC.y);
     const nx = faceX ? Math.sign(toC.x) : 0, nz = faceX ? 0 : Math.sign(toC.y); const faceW = faceX ? d : w;
@@ -200,7 +201,7 @@ export function createExplore({ renderer, WORKS, PROFILE, getTexture, onZone, on
   const boardMat = new THREE.ShaderMaterial({ vertexShader: uvVS, fragmentShader: boardFS, toneMapped: false,
     uniforms: { tA: { value: null }, tB: { value: null }, aA: { value: 1.6 }, aB: { value: 1.6 }, uProg: { value: 0 }, uTime: { value: 0 }, uAsp: { value: BW / BH } } });
   const board = new THREE.Mesh(new THREE.PlaneGeometry(BW, BH), boardMat); board.position.set(0, BH / 2 + 2.2, -12.2); scene.add(board);
-  const boardBack = new THREE.Mesh(new THREE.BoxGeometry(BW + .6, BH + .6, .5), towerMat); boardBack.position.set(0, board.position.y, -12.5); scene.add(boardBack);
+  const boardBack = new THREE.Mesh(new THREE.BoxGeometry(BW + .6, BH + .6, .5), towerMat); boardBack.position.set(0, board.position.y, -12.5); scene.add(boardBack); occl.push(boardBack);
   const legs = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.4, .8), towerMat); legs.position.set(0, 1.2, -12.5); scene.add(legs); solid(0, -12.4, BW + .6, 1.4);
   const fl = new THREE.LineBasicMaterial({ color: new THREE.Color(3, 0, .6), toneMapped: false });
   const hw = BW / 2 + .25, hh = BH / 2 + .25, Lc = 1.1;
@@ -251,7 +252,7 @@ export function createExplore({ renderer, WORKS, PROFILE, getTexture, onZone, on
 
   // pad props: terminal (about) & mail kiosk (contact) & skin machine
   function kiosk(x, z, ry, title, color) {
-    const k = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3.4, .6), towerMat); k.position.set(x, 1.7, z); k.rotation.y = ry; scene.add(k);
+    const k = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3.4, .6), towerMat); k.position.set(x, 1.7, z); k.rotation.y = ry; scene.add(k); occl.push(k);
     const sc = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 2.6), new THREE.MeshBasicMaterial({ map: holoPanel(x * 7 + 99, color, title), color: new THREE.Color(1.5, 1.5, 1.5), toneMapped: false }));
     sc.position.set(x + Math.sin(ry) * .31, 1.9, z + Math.cos(ry) * .31); sc.rotation.y = ry; scene.add(sc);
     const bx = Math.abs(Math.cos(ry)) > .5 ? [2.4, .9] : [.9, 2.4]; solid(x, z, bx[0], bx[1]);
@@ -259,7 +260,7 @@ export function createExplore({ renderer, WORKS, PROFILE, getTexture, onZone, on
   kiosk(-11.2, -1.5, Math.PI / 2, 'ABOUT', '#ff4d6d');
   kiosk(11.2, -1.5, -Math.PI / 2, 'MAIL', '#ff4d6d');
   // skin machine: colour swatches
-  const sm = new THREE.Mesh(new THREE.BoxGeometry(2.4, 4.2, .8), towerMat); sm.position.set(7.5, 2.1, 11.2); scene.add(sm); solid(7.5, 11.2, 2.6, 1.2);
+  const sm = new THREE.Mesh(new THREE.BoxGeometry(2.4, 4.2, .8), towerMat); sm.position.set(7.5, 2.1, 11.2); scene.add(sm); occl.push(sm); solid(7.5, 11.2, 2.6, 1.2);
   SKINS.forEach((s, i) => { const sw = new THREE.Mesh(new THREE.PlaneGeometry(.5, .5), new THREE.MeshBasicMaterial({ color: new THREE.Color(s.c).multiplyScalar(2), toneMapped: false }));
     sw.position.set(6.7 + (i % 3) * .8, 3.3 - Math.floor(i / 3) * .8, 10.79); sw.rotation.y = Math.PI; scene.add(sw); });
   const smSign = new THREE.Mesh(sgeo, new THREE.MeshBasicMaterial({ map: neonSign('SKINS', { color: '#ffffff' }), color: new THREE.Color(1.8, 1.8, 1.8), transparent: true, toneMapped: false, depthWrite: false, blending: THREE.AdditiveBlending }));
@@ -313,10 +314,16 @@ export function createExplore({ renderer, WORKS, PROFILE, getTexture, onZone, on
 
   /* ---------- camera ---------- */
   let lookLift = 0; const camOff = new THREE.Vector3(), camPos = new THREE.Vector3(0, 5, 14), look = new THREE.Vector3(0, 1.5, 0), lookS = new THREE.Vector3(0, 1.5, 0);
+  // adjustable orbit camera: yaw around the player, clamped pitch, clamped zoom (multiplier on the default distance)
+  const ZMIN = .45, ZMAX = 1.8, PMIN = .1, PMAX = 1.25;
+  const clampZ = z => THREE.MathUtils.clamp(isFinite(z) ? z : 1, ZMIN, ZMAX);
+  let pitch0 = .43, dist0 = 10.6, yawT = 0, yawS = 0, pitchT = null, pitchS = .43, zoomT = clampZ(zoom0), zoomS = zoomT;
+  const ray = new THREE.Raycaster(), rayDir = new THREE.Vector3(), pivot = new THREE.Vector3(), camWant = new THREE.Vector3();
   function resize() {
     camera.aspect = innerWidth / innerHeight; const portrait = innerHeight > innerWidth;
     camera.fov = portrait ? 68 : 50; camera.updateProjectionMatrix();
     camOff.set(0, portrait ? 6.2 : 4.4, portrait ? 11.5 : 9.6); cap.visible = !portrait; lookLift = portrait ? .9 : 0;
+    pitch0 = Math.atan2(camOff.y, camOff.z); dist0 = camOff.length(); if (pitchT === null) { pitchT = pitchS = pitch0; }
     composer.setSize(innerWidth, innerHeight); composer.setPixelRatio(renderer.getPixelRatio());
     mirror.getRenderTarget().setSize(innerWidth * scale, innerHeight * scale);
   }
@@ -356,6 +363,7 @@ export function createExplore({ renderer, WORKS, PROFILE, getTexture, onZone, on
     if (keys.has('arrowleft') || keys.has('a') || keys.has('q')) ix -= 1; if (keys.has('arrowright') || keys.has('d')) ix += 1;
     if (keys.has('arrowup') || keys.has('w') || keys.has('z')) iz -= 1; if (keys.has('arrowdown') || keys.has('s')) iz += 1;
     ix += joy.x; iz += joy.y; const il = Math.hypot(ix, iz); if (il > 1) { ix /= il; iz /= il; }
+    { const c = Math.cos(yawS), sn = Math.sin(yawS), rx = ix * c + iz * sn, rz = -ix * sn + iz * c; ix = rx; iz = rz; } // camera-relative
     const speed = 6.2; const k = 1 - Math.exp(-dt * 10);
     vel.x += (ix * speed - vel.x) * k; vel.z += (iz * speed - vel.z) * k;
     player.position.x += vel.x * dt; player.position.z += vel.z * dt; collide(player.position);
@@ -372,10 +380,26 @@ export function createExplore({ renderer, WORKS, PROFILE, getTexture, onZone, on
     nextBlink -= dt; if (nextBlink < 0) { blink = .14; nextBlink = 2 + Math.random() * 3; } if (blink > 0) blink -= dt; u.eyes.scale.y = blink > 0 ? .15 : 1;
     // camera
     mouseS.lerp(mouse, .04);
-    const off = camOff.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), -mouseS.x * .22); off.y += mouseS.y * .8;
-    const target = new THREE.Vector3(player.position.x * .85, 0, player.position.z).add(off);
-    camPos.lerp(target, 1 - Math.exp(-dt * 3.2)); camera.position.copy(camPos);
-    look.set(player.position.x * .9, 1.3 + lookLift + player.position.y * .35, player.position.z - 3.2); lookS.lerp(look, 1 - Math.exp(-dt * 5)); camera.lookAt(lookS);
+    const kc = 1 - Math.exp(-dt * 9);
+    yawS += (yawT - yawS) * kc; pitchS += (pitchT - pitchS) * kc; zoomS += (zoomT - zoomS) * kc;
+    const yaw = yawS - mouseS.x * .12, pit = THREE.MathUtils.clamp(pitchS + mouseS.y * .05, PMIN, PMAX), dist = dist0 * zoomS;
+    const fx = -Math.sin(yaw), fz = -Math.cos(yaw); // forward on the ground
+    const hd = Math.cos(pit) * dist;
+    camWant.set(player.position.x - fx * hd, Math.sin(pit) * dist, player.position.z - fz * hd);
+    camPos.lerp(camWant, 1 - Math.exp(-dt * 6));
+    // keep the camera out of towers: ray from the player's head to the camera, pull in in front of the first hit
+    pivot.set(player.position.x, 1.4 + player.position.y * .5, player.position.z);
+    rayDir.subVectors(camPos, pivot); const want = rayDir.length();
+    camera.position.copy(camPos);
+    if (want > 1e-3) {
+      rayDir.multiplyScalar(1 / want); ray.set(pivot, rayDir); ray.far = want + .6;
+      const hit = ray.intersectObjects(occl, false)[0];
+      if (hit) { const d = Math.max(1.2, hit.distance - .6); if (d < want) camera.position.copy(pivot).addScaledVector(rayDir, d); }
+    }
+    if (camera.position.y < .35) camera.position.y = .35;
+    const ahead = 3.2 * Math.min(1, zoomS);
+    look.set(player.position.x + fx * ahead, 1.3 + lookLift * Math.min(1, zoomS) + player.position.y * .35, player.position.z + fz * ahead);
+    lookS.lerp(look, 1 - Math.exp(-dt * 5)); camera.lookAt(lookS);
     zoneUpdate();
     for (const f of anim) f(t, dt);
   }
@@ -389,6 +413,10 @@ export function createExplore({ renderer, WORKS, PROFILE, getTexture, onZone, on
     jump() { jumpReq = true; },
     setJoy(x, y) { joy.set(x, y); },
     setMouse(x, y) { mouse.set(x, y); },
+    orbit(dx, dy) { if (!isFinite(dx) || !isFinite(dy)) return; yawT -= dx * .0065; pitchT = THREE.MathUtils.clamp((pitchT ?? pitch0) + dy * .005, PMIN, PMAX); },
+    zoom(f) { if (!isFinite(f) || f <= 0) return; zoomT = clampZ(zoomT * f); onZoom && onZoom(zoomT); },
+    resetCam() { yawT = Math.round(yawS / (Math.PI * 2)) * Math.PI * 2; pitchT = pitch0; zoomT = 1; onZoom && onZoom(1); },
+    get camYaw() { return yawS; }, get camZoom() { return zoomT; },
     get zone() { return zone; },
     get boardIndex() { return bIdx; },
     npcCount: npcLines.length, skinCount: SKINS.length,

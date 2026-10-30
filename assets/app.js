@@ -208,7 +208,7 @@ function initGL() {
   resize();
   addEventListener('resize', resize);
   try {
-    explore = createExplore({ renderer, WORKS, PROFILE, getTexture, mobile: IS_TOUCH || isMobile(), onZone, onAction, onTalk });
+    explore = createExplore({ renderer, WORKS, PROFILE, getTexture, mobile: IS_TOUCH || isMobile(), onZone, onAction, onTalk, zoom: +(localStorage.getItem('rk_zoom') || 1), onZoom: saveZoom });
     addEventListener('resize', () => explore.resize());
     const sk = +localStorage.getItem('rk_skin') || 0; if (sk) explore.setSkin(sk);
   } catch (e) { console.warn('explore disabled', e); explore = null; }
@@ -417,6 +417,7 @@ addEventListener('keydown', e => {
 });
 let wheelLock = 0;
 addEventListener('wheel', e => {
+  if (view === 'explore' && explore && !e.target.closest('#info,.dialog,.tasks')) { const d = THREE_CLAMP(e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY, -240, 240); explore.zoom(Math.exp(d * .0007)); tutDone('cam'); return; }
   if (view !== 'works' || document.body.classList.contains('info-open') || lb.classList.contains('on')) return;
   const now = performance.now(); if (now - wheelLock < 700 || Math.abs(e.deltaY) < 12) return;
   wheelLock = now; go(current + (e.deltaY > 0 ? 1 : -1));
@@ -524,12 +525,14 @@ function exploreKey(e) {
   if (KEYMAP[k] || KEYMAP[k.toLowerCase()] || ['z', 'q'].includes(k.toLowerCase())) { e.preventDefault(); explore.key(k, true); flash(KEYMAP[k] || KEYMAP[k.toLowerCase()]); tutDone('move'); }
   else if (k === ' ') { e.preventDefault(); if (!e.repeat) { explore.jump(); flash('.k-space'); tutDone('jump'); } }
   else if (k === 'Enter' || k.toLowerCase() === 'e') { e.preventDefault(); flash('.k-e'); doInteract(); }
+  else if ((k.toLowerCase() === 'r' || k.toLowerCase() === 'c') && !e.repeat) { e.preventDefault(); flash('.k-cam'); explore.resetCam(); }
 }
 
 /* tutorial */
 const TUT = () => [
   ['move', IS_TOUCH ? 'DRAG ANYWHERE TO MOVE' : 'USE ◀ ▲ ▼ ▶ OR WASD TO MOVE'],
   ['jump', IS_TOUCH ? 'TAP JUMP TO JUMP' : 'PRESS SPACE TO JUMP'],
+  ['cam', IS_TOUCH ? 'TWO FINGERS TO ORBIT · PINCH TO ZOOM' : 'DRAG TO ORBIT · WHEEL TO ZOOM · R RESETS'],
   ['ring', 'WALK INTO A GLOWING RING'],
 ];
 let tutOn = false; const tutState = new Set();
@@ -538,23 +541,55 @@ function maybeTutorial() {
   tutOn = true; document.body.classList.add('tut-on'); drawTut();
 }
 function drawTut() { $('#tut-steps').innerHTML = TUT().map(([id, t], i) => `<div class="tut-step${tutState.has(id) ? ' done' : ''}"><span class="mono">0${i + 1}</span><b class="bold">${t}</b></div>`).join(''); }
-function tutDone(id) { if (!tutOn || tutState.has(id)) return; tutState.add(id); drawTut(); if (tutState.size >= 3) setTimeout(endTut, 900); }
+function tutDone(id) { if (!tutOn || tutState.has(id)) return; tutState.add(id); drawTut(); if (tutState.size >= TUT().length) setTimeout(endTut, 900); }
 function endTut() { if (!tutOn) return; tutOn = false; store.set('rk_tut', true); document.body.classList.remove('tut-on'); }
 $('#tut-skip').addEventListener('click', endTut);
 
 /* touch joystick + jump */
 const joyEl = $('#joy'), knob = $('i', joyEl); let joyId = null, jx0 = 0, jy0 = 0;
+let pinch = null; // two-finger camera gesture: {mx, my, d}
+const two = ts => { const a = ts[0], b = ts[1]; return { mx: (a.clientX + b.clientX) / 2, my: (a.clientY + b.clientY) / 2, d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) }; };
 canvas.addEventListener('touchstart', e => {
-  if (view !== 'explore' || !explore || joyId !== null) return;
+  if (view !== 'explore' || !explore) return;
+  if (e.touches.length >= 2) { // second finger: hand over from joystick to camera
+    if (joyId !== null) { joyId = null; joyEl.classList.remove('on'); explore.setJoy(0, 0); }
+    pinch = two(e.touches); return;
+  }
+  if (joyId !== null || pinch) return;
   const t = e.changedTouches[0]; joyId = t.identifier; jx0 = t.clientX; jy0 = t.clientY;
   joyEl.style.left = jx0 + 'px'; joyEl.style.top = jy0 + 'px'; joyEl.classList.add('on'); knob.style.transform = '';
 }, { passive: true });
 canvas.addEventListener('touchmove', e => {
+  if (pinch && e.touches.length >= 2 && explore) {
+    const n = two(e.touches); explore.orbit(n.mx - pinch.mx, n.my - pinch.my);
+    if (pinch.d > 20 && n.d > 20) explore.zoom(pinch.d / n.d);
+    pinch = n; tutDone('cam'); e.preventDefault(); return;
+  }
   if (joyId === null) return; const t = [...e.changedTouches].find(x => x.identifier === joyId); if (!t) return;
   let dx = t.clientX - jx0, dy = t.clientY - jy0; const L = Math.hypot(dx, dy), M = 46; if (L > M) { dx *= M / L; dy *= M / L; }
   knob.style.transform = `translate(${dx}px,${dy}px)`; explore.setJoy(dx / M, dy / M); if (L > 12) tutDone('move');
-}, { passive: true });
-const joyEnd = e => { if (joyId === null || ![...e.changedTouches].some(x => x.identifier === joyId)) return; joyId = null; joyEl.classList.remove('on'); explore && explore.setJoy(0, 0); };
+}, { passive: false });
+const joyEnd = e => { if (pinch && e.touches.length < 2) { pinch = e.touches.length ? { mx: 0, my: 0, d: 0, wait: true } : null; if (!e.touches.length) pinch = null; } if (joyId === null || ![...e.changedTouches].some(x => x.identifier === joyId)) return; joyId = null; joyEl.classList.remove('on'); explore && explore.setJoy(0, 0); };
 canvas.addEventListener('touchend', joyEnd); canvas.addEventListener('touchcancel', joyEnd);
 $('#jump-btn').addEventListener('touchstart', e => { e.preventDefault(); explore && explore.jump(); tutDone('jump'); }, { passive: false });
 $('#jump-btn').addEventListener('click', () => { explore && explore.jump(); tutDone('jump'); });
+$('#cam-btn').addEventListener('click', () => { explore && explore.resetCam(); });
+
+/* desktop camera: drag on empty space (left or right button) to orbit */
+let drag = null;
+canvas.addEventListener('pointerdown', e => {
+  if (view !== 'explore' || !explore || e.pointerType !== 'mouse' || (e.button !== 0 && e.button !== 2)) return;
+  drag = { x: e.clientX, y: e.clientY, id: e.pointerId }; try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+  document.body.classList.add('cam-drag');
+});
+canvas.addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.id || !explore) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
+  if (dx || dy) { explore.orbit(dx, dy); if (Math.abs(dx) + Math.abs(dy) > 2) tutDone('cam'); }
+});
+const dragEnd = e => { if (!drag || (e && e.pointerId !== drag.id)) return; drag = null; document.body.classList.remove('cam-drag'); };
+canvas.addEventListener('pointerup', dragEnd); canvas.addEventListener('pointercancel', dragEnd); canvas.addEventListener('lostpointercapture', dragEnd);
+canvas.addEventListener('contextmenu', e => { if (view === 'explore') e.preventDefault(); });
+let zoomSaveT = 0;
+function saveZoom(z) { clearTimeout(zoomSaveT); zoomSaveT = setTimeout(() => { try { localStorage.setItem('rk_zoom', String(Math.round(z * 1000) / 1000)); } catch (e) {} }, 250); }
+function THREE_CLAMP(v, a, b) { return Math.max(a, Math.min(b, v)); }
